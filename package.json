@@ -1,0 +1,12 @@
+{
+  "name": "happylokam-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HappyLokam Web Frontend",
+  "scripts": {
+    "dev": "npm run dev --prefix happylokam-web",
+    "build": "npm run build --prefix happylokam-web",
+    "start": "npm run start --prefix happylokam-web",
+    "lint": "npm run lint --prefix happylokam-web"
+  }
+}
