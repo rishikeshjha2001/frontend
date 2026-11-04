@@ -83,11 +83,18 @@ export default function ItemDetailPage() {
         const data = await res.json();
         if (data.success && data.data) {
           setItem(data.data);
-          if (data.data.availableDates?.length > 0) {
+          const isTicketItem = data.data.itemType === 'TICKET';
+          if (isTicketItem && data.data.availableDates?.length > 0) {
             setSelectedDate(data.data.availableDates[0]);
+          } else {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            setSelectedDate(tomorrow.toISOString().split('T')[0]);
           }
           if (data.data.availableTimes?.length > 0) {
             setSelectedTime(data.data.availableTimes[0]);
+          } else {
+            setSelectedTime('Evening (06:00 PM - 11:30 PM)');
           }
         } else {
           setError(data.error || 'Experience item not found');
@@ -293,6 +300,23 @@ export default function ItemDetailPage() {
   const capacityNum = item.capacity || item.totalSlots || 100;
   const remainingSlots = Math.max(0, capacityNum - item.bookedSlots);
   const remainingPercent = Math.min(100, Math.round((remainingSlots / capacityNum) * 100));
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const quickDates = [0, 1, 2, 3, 7, 14].map((offset) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    const val = d.toISOString().split('T')[0];
+    const label = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    return { label, value: val };
+  });
+
+  const defaultCelebrationTimes = [
+    'Morning (09:00 AM - 01:00 PM)',
+    'Afternoon (01:00 PM - 05:00 PM)',
+    'Evening (06:00 PM - 11:30 PM)',
+    'Full Day (24 Hours)',
+  ];
+  const effectiveTimes = item.availableTimes && item.availableTimes.length > 0 ? item.availableTimes : defaultCelebrationTimes;
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-24">
@@ -519,12 +543,19 @@ export default function ItemDetailPage() {
 
               {/* 1. Date Selection */}
               <div>
-                <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Select Available Date *</span>
+                <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-rose-400" />
+                    <span>{isTicket ? 'Select Event Pass Date *' : 'Select Celebration Date *'}</span>
+                  </div>
+                  {!isTicket && (
+                    <span className="text-[11px] text-emerald-400 font-semibold">
+                      ✓ All calendar dates available
+                    </span>
+                  )}
                 </label>
 
-                {item.availableDates && item.availableDates.length > 0 ? (
+                {isTicket && item.availableDates && item.availableDates.length > 0 ? (
                   <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
                     {item.availableDates.map((dateStr, i) => (
                       <button
@@ -542,35 +573,70 @@ export default function ItemDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-xs text-slate-400">Active everyday throughout season.</div>
+                  <div className="space-y-3">
+                    {/* Quick Upcoming Day Chips */}
+                    <div className="flex flex-wrap gap-2">
+                      {quickDates.map((q) => (
+                        <button
+                          key={q.value}
+                          type="button"
+                          onClick={() => setSelectedDate(q.value)}
+                          className={`px-3 py-1.5 rounded-xl text-xs transition border ${
+                            selectedDate === q.value
+                              ? 'bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-600/30 font-bold'
+                              : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 font-medium'
+                          }`}
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom Calendar Date Input */}
+                    <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-2 px-3">
+                      <span className="text-xs text-slate-400 font-medium">Custom Date:</span>
+                      <input
+                        type="date"
+                        min={todayStr}
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="bg-black/50 border border-white/15 rounded-lg px-3 py-1.5 text-white text-xs focus:border-rose-500 focus:outline-none [color-scheme:dark]"
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* 2. Time Slot Selection */}
-              {item.availableTimes && item.availableTimes.length > 0 && (
-                <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center gap-1.5">
+              {/* 2. Time Slot Selection (All times available for bookings) */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Select Time Slot</span>
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {item.availableTimes.map((timeStr, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setSelectedTime(timeStr)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition border ${
-                          selectedTime === timeStr
-                            ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold'
-                            : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        {timeStr}
-                      </button>
-                    ))}
+                    <span>{isTicket ? 'Select Time Slot' : 'Select Celebration Timing'}</span>
                   </div>
+                  {!isTicket && (
+                    <span className="text-[11px] text-amber-400 font-semibold">
+                      ✓ All times available
+                    </span>
+                  )}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {effectiveTimes.map((timeStr, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedTime(timeStr)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition border ${
+                        selectedTime === timeStr
+                          ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {timeStr}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
               {/* 3. Quantity / Tickets counter */}
               <div>

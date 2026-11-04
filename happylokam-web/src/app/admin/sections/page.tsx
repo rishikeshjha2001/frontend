@@ -155,8 +155,8 @@ export default function AdminSectionsPage() {
     price: 4999,
     priceUnit: 'per booking',
     features: 'AC Banquet Hall, Pure Ghee Delicacies, Dedicated Manager, Instant Pass',
-    availableDates: '2026-10-24, 2026-10-25, 2026-10-26, 2026-10-27, 2026-10-28',
-    availableTimes: '10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM',
+    availableDates: '',
+    availableTimes: '10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM, Full Day',
     totalSlots: 100,
     image: PRESET_IMAGES[0].url,
     description: '',
@@ -287,7 +287,10 @@ export default function AdminSectionsPage() {
     if (!itemForm.title.trim()) return alert('Please enter item title');
 
     try {
-      const datesArr = itemForm.availableDates.split(',').map(d => d.trim()).filter(Boolean);
+      const isTicket = itemForm.itemType === 'TICKET';
+      const datesArr = isTicket
+        ? itemForm.availableDates.split(',').map(d => d.trim()).filter(Boolean)
+        : [];
       const timesArr = itemForm.availableTimes.split(',').map(t => t.trim()).filter(Boolean);
       const featArr = itemForm.features.split(',').map(f => f.trim()).filter(Boolean);
 
@@ -587,7 +590,7 @@ export default function AdminSectionsPage() {
                                           price: item.price,
                                           priceUnit: item.priceUnit,
                                           features: (item.features || []).join(', '),
-                                          availableDates: (item.availableDates || []).join(', '),
+                                          availableDates: item.itemType === 'TICKET' ? (item.availableDates || []).join(', ') : '',
                                           availableTimes: (item.availableTimes || []).join(', '),
                                           totalSlots: item.totalSlots || 100,
                                           image: item.image,
@@ -1202,30 +1205,50 @@ export default function AdminSectionsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
-                          Available Dates (Comma separated)
-                        </label>
-                        <input
-                          type="text"
-                          value={itemForm.availableDates}
-                          onChange={(e) => setItemForm({ ...itemForm, availableDates: e.target.value })}
-                          placeholder="2026-10-24, 2026-10-25"
-                          className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
-                        />
-                      </div>
+                      {itemForm.itemType === 'TICKET' ? (
+                        <div>
+                          <label className="block text-xs font-semibold text-rose-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                            <Ticket className="w-3.5 h-3.5" />
+                            <span>Ticket Available Dates (Comma separated) *</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={itemForm.availableDates}
+                            onChange={(e) => setItemForm({ ...itemForm, availableDates: e.target.value })}
+                            placeholder="e.g. 2026-11-10, 2026-11-11, 2026-11-12"
+                            className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
+                          />
+                          <p className="text-[11px] text-zinc-500 mt-1">
+                            Only tickets have fixed admission dates for event passes.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3 text-xs flex flex-col justify-center">
+                          <div className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                            <CheckCircle className="w-4 h-4 text-emerald-400" />
+                            <span>All Dates Available (Open Booking)</span>
+                          </div>
+                          <p className="text-zinc-400 text-[11px] leading-relaxed">
+                            For celebration bookings (banquet halls, catering, decor, services), all dates are open. Customers can select any celebration date on the calendar.
+                          </p>
+                        </div>
+                      )}
 
                       <div>
-                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
-                          Available Times (Comma separated)
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Available Times / Slots</span>
                         </label>
                         <input
                           type="text"
                           value={itemForm.availableTimes}
                           onChange={(e) => setItemForm({ ...itemForm, availableTimes: e.target.value })}
-                          placeholder="10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM"
+                          placeholder="10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM, Full Day"
                           className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
                         />
+                        <p className="text-[11px] text-zinc-500 mt-1">
+                          {itemForm.itemType === 'TICKET' ? 'Time slots for pass entry.' : 'Convenient timing slots (all times are available for booking).'}
+                        </p>
                       </div>
                     </div>
 
