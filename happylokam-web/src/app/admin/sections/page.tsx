@@ -182,6 +182,8 @@ export default function AdminSectionsPage() {
     itemType: 'BOOKING' as 'TICKET' | 'BOOKING',
     price: 4999,
     priceUnit: 'per booking',
+    tags: 'wedding, packages, mandap',
+    celebrationTheme: 'None',
     features: 'AC Banquet Hall, Pure Ghee Delicacies, Dedicated Manager, Instant Pass',
     availableDates: '2026-10-24, 2026-10-25, 2026-10-26, 2026-10-27, 2026-10-28',
     availableTimes: '10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM',
@@ -370,6 +372,10 @@ export default function AdminSectionsPage() {
       const datesArr = itemForm.availableDates.split(',').map(d => d.trim()).filter(Boolean);
       const timesArr = itemForm.availableTimes.split(',').map(t => t.trim()).filter(Boolean);
       const featArr = itemForm.features.split(',').map(f => f.trim()).filter(Boolean);
+      const rawTags = (itemForm as any).tags ? (itemForm as any).tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [];
+      const themeTag = (itemForm as any).celebrationTheme && (itemForm as any).celebrationTheme !== 'None' ? (itemForm as any).celebrationTheme.toLowerCase() : '';
+      const badgeTag = itemForm.badge ? itemForm.badge.toLowerCase() : '';
+      const finalTags = Array.from(new Set([...rawTags, themeTag, badgeTag].filter(Boolean)));
 
       const payload = {
         title: itemForm.title.trim(),
@@ -382,6 +388,7 @@ export default function AdminSectionsPage() {
         availableDates: datesArr,
         availableTimes: timesArr,
         features: featArr,
+        tags: finalTags,
         totalSlots: Number(itemForm.totalSlots) || 100,
         image: itemForm.image.trim(),
         description: itemForm.description.trim(),
@@ -671,6 +678,8 @@ export default function AdminSectionsPage() {
                                           availableTimes: (item.availableTimes || []).join(', '),
                                           totalSlots: item.totalSlots || 100,
                                           image: item.image,
+                                          tags: (item.tags || []).join(', '),
+                                          celebrationTheme: (item.tags || []).find((t: string) => ['wedding', 'birthday', 'loksafari', 'anniversary', 'corporate'].includes(t.toLowerCase())) || 'None',
                                           description: item.description || '',
                                         });
                                         setItemFormStep(1);
@@ -1188,7 +1197,9 @@ export default function AdminSectionsPage() {
                   >
                     Cancel
                   </button>
-                  <button
+                                      
+
+<button
                     type="submit"
                     className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30"
                   >
@@ -1342,6 +1353,86 @@ export default function AdminSectionsPage() {
                           <option value="BOOKING">BOOKING (Celebration / Service)</option>
                           <option value="TICKET">TICKET (Admission Pass)</option>
                         </select>
+                      </div>
+                    </div>
+
+                    {/* Celebration Theme / Package Preset */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                          Celebration Theme / Package
+                        </label>
+                        <select
+                          value={(itemForm as any).celebrationTheme}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            let newTags = (itemForm as any).tags || '';
+                            if (val !== 'None' && !newTags.toLowerCase().includes(val.toLowerCase())) {
+                              newTags = newTags ? `${newTags}, ${val.toLowerCase()}` : val.toLowerCase();
+                            }
+                            setItemForm({ ...itemForm, celebrationTheme: val, tags: newTags } as any);
+                          }}
+                          className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                        >
+                          <option value="None">Standard Item / Single Service</option>
+                          <option value="wedding">💍 Wedding & Royal Mandap Package</option>
+                          <option value="birthday">🎈 Birthday Fiesta Celebration Package</option>
+                          <option value="loksafari">🦁 LokSafari Adventure Entry Pass</option>
+                          <option value="catering">🍛 56-Bhog Royal Catering Package</option>
+                          <option value="decor">✨ Floral & Theme Decoration Package</option>
+                          <option value="anniversary">💖 Engagement & Anniversary Package</option>
+                          <option value="corporate">🏢 Corporate & Conference Package</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Tag className="w-3.5 h-3.5 text-indigo-400" />
+                          Tags & Keywords (Comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={(itemForm as any).tags}
+                          onChange={(e) => setItemForm({ ...itemForm, tags: e.target.value } as any)}
+                          placeholder="e.g. wedding, mandap, royal, package, luxury"
+                          className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Tag Badges */}
+                    <div>
+                      <p className="text-[11px] text-zinc-400 mb-1.5">Quick Add Tags for Mobile Exploration:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          'wedding',
+                          'birthday',
+                          'packages',
+                          'mandap',
+                          'royal palace',
+                          'catering 56-bhog',
+                          'balloon decor',
+                          'dj sound',
+                          'loksafari',
+                          'luxury',
+                          'trending',
+                        ].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => {
+                              const cur = (itemForm as any).tags || '';
+                              if (!cur.toLowerCase().includes(t.toLowerCase())) {
+                                const updated = cur ? `${cur}, ${t}` : t;
+                                setItemForm({ ...itemForm, tags: updated } as any);
+                              }
+                            }}
+                            className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-800/80 hover:bg-rose-500/20 text-zinc-300 hover:text-rose-300 border border-zinc-700 transition cursor-pointer"
+                          >
+                            + {t}
+                          </button>
+                        ))}
                       </div>
                     </div>
 

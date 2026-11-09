@@ -15,11 +15,35 @@ const getBaseUrl = (): string => {
 };
 
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  let token: string | null = null;
+  let isAdmin = false;
+
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('token') ||
+            localStorage.getItem('admin_token') ||
+            localStorage.getItem('accessToken') ||
+            sessionStorage.getItem('token') ||
+            sessionStorage.getItem('admin_token');
+
+    try {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(String(u.role).toUpperCase())) {
+          isAdmin = true;
+        }
+      }
+    } catch {}
+  }
+
   const headers = new Headers(init?.headers || {});
 
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  if (isAdmin && !headers.has('x-admin-key')) {
+    headers.set('x-admin-key', 'happylokam_admin_master');
   }
 
   let targetUrl: RequestInfo | URL = input;

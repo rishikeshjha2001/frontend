@@ -14,8 +14,12 @@ import {
   Smartphone, 
   MessageSquare,
   Sparkles,
-  Loader2
+  Loader2,
+  Radio,
+  Zap,
+  Tag
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { authFetch } from '@/lib/auth-fetch';
 
 type NotificationRecord = {
@@ -73,6 +77,7 @@ export default function AdminBroadcastPage() {
     e.preventDefault();
     if (!formData.title.trim() || !formData.message.trim()) {
       showToast('Title and message are required', 'error');
+      toast.error('Title and message are required');
       return;
     }
 
@@ -84,19 +89,34 @@ export default function AdminBroadcastPage() {
         body: JSON.stringify(formData),
       });
 
+      const resJson = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to broadcast notification');
+        throw new Error(resJson.error || resJson.message || 'Failed to broadcast notification');
       }
 
-      showToast('Notification broadcasted to all recipients!', 'success');
+      const successMsg = resJson.message || 'Notification broadcasted to all recipients!';
+      showToast(successMsg, 'success');
+      toast.success(successMsg);
       setFormData({ title: '', message: '', targetRole: 'ALL', type: 'IN_APP' });
       fetchHistory();
     } catch (error: any) {
-      showToast(error.message || 'Error broadcasting notification', 'error');
+      const errMsg = error.message || 'Error broadcasting notification';
+      showToast(errMsg, 'error');
+      toast.error(errMsg);
     } finally {
       setSending(false);
     }
+  };
+
+  const applyPreset = (preset: { title: string; message: string; targetRole: string; type: string }) => {
+    setFormData({
+      title: preset.title,
+      message: preset.message,
+      targetRole: preset.targetRole,
+      type: preset.type,
+    });
+    toast.info('Template applied: ' + preset.title);
   };
 
   const getTargetBadge = (role: string) => {
@@ -168,6 +188,55 @@ export default function AdminBroadcastPage() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Quick Presets */}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                Quick Celebration & Offer Templates
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  {
+                    label: '🎉 Wedding Offers & Mandap Release',
+                    title: '💍 Grand Wedding Season Offers Live! Up to 25% Off Mandap & Palaces',
+                    message: 'Explore premium wedding banquets, royal mandap decoration, and 56-bhog catering packages with zero convenience fee.',
+                    targetRole: 'ALL',
+                    type: 'IN_APP',
+                  },
+                  {
+                    label: '🎂 Birthday Theme Packages',
+                    title: '🎈 Special Birthday Theme Packages Starting @ ₹4,999!',
+                    message: 'Get magic balloon decor, cartoon mascots, DJ sound, and personalized celebration passes directly in the HappyLokam app.',
+                    targetRole: 'USER',
+                    type: 'IN_APP',
+                  },
+                  {
+                    label: '🎪 LokSafari Adventure Passes',
+                    title: '🦁 LokSafari Family Weekend Passes Released!',
+                    message: 'Unlimited resort fun, pool entry, games, and nature trails. Book your digital family entry ticket today.',
+                    targetRole: 'USER',
+                    type: 'PUSH',
+                  },
+                  {
+                    label: '⚡ Vendor Payouts & Booking Surge',
+                    title: '📢 Partner Alert: High Booking Demand Expected This Weekend',
+                    message: 'Please keep your event availability calendars updated and verify all customer digital ticket codes at gate check-in.',
+                    targetRole: 'PARTNER',
+                    type: 'IN_APP',
+                  },
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-zinc-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/40 transition cursor-pointer"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                 Notification Headline / Title *
@@ -198,7 +267,7 @@ export default function AdminBroadcastPage() {
               />
             </div>
 
-              <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                   Target Audience
@@ -215,6 +284,21 @@ export default function AdminBroadcastPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                  Delivery Channel / Priority
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-rose-500 focus:outline-none transition"
+                >
+                  <option value="IN_APP">In-App Alert Notification</option>
+                  <option value="PUSH">Mobile Device Push Notification</option>
+                  <option value="URGENT">Urgent High Priority Alert</option>
+                </select>
+              </div>
             </div>
 
             <button
