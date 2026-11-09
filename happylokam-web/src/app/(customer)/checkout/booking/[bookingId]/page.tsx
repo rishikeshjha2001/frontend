@@ -66,7 +66,7 @@ export default function CheckoutPage() {
       const orderData = await orderRes.json();
       const order = orderData.data || orderData;
 
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_51NgQ1P2jW4yq2';
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_SjBHhCXWmZhVK6';
 
       const options = {
         key: razorpayKey,

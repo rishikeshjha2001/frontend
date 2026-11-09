@@ -82,6 +82,20 @@ interface CustomCategory {
   items: SectionItem[];
 }
 
+interface AdvanceFilterItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  tag?: string;
+  route?: string;
+  category?: string;
+  keywords?: string[];
+  icon?: string;
+  filterType?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
 interface SectionBooking {
   id: string;
   itemId: string;
@@ -126,7 +140,21 @@ export default function AdminSectionsPage() {
   const [sections, setSections] = useState<CustomSection[]>([]);
   const [categories, setCategories] = useState<CustomCategory[]>([]);
   const [bookings, setBookings] = useState<SectionBooking[]>([]);
-  const [activeTab, setActiveTab] = useState<'sections' | 'categories' | 'bookings'>('sections');
+  const [activeTab, setActiveTab] = useState<'sections' | 'categories' | 'bookings' | 'filters'>('sections');
+  const [advanceFilters, setAdvanceFilters] = useState<AdvanceFilterItem[]>([]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [editingFilter, setEditingFilter] = useState<AdvanceFilterItem | null>(null);
+  const [filterForm, setFilterForm] = useState({
+    title: '',
+    subtitle: '',
+    tag: 'WEDDING',
+    category: 'Weddings',
+    route: '/(tabs)/explore?category=Weddings',
+    keywords: 'wedding, mandap, decor, banquet, palace',
+    filterType: 'THEME',
+    icon: 'Sparkles',
+    order: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   // Section Modal (Only name asked)
@@ -155,8 +183,8 @@ export default function AdminSectionsPage() {
     price: 4999,
     priceUnit: 'per booking',
     features: 'AC Banquet Hall, Pure Ghee Delicacies, Dedicated Manager, Instant Pass',
-    availableDates: '',
-    availableTimes: '10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM, Full Day',
+    availableDates: '2026-10-24, 2026-10-25, 2026-10-26, 2026-10-27, 2026-10-28',
+    availableTimes: '10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM',
     totalSlots: 100,
     image: PRESET_IMAGES[0].url,
     description: '',
@@ -201,6 +229,58 @@ export default function AdminSectionsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  
+  // Save Advance Filter / Theme
+  const handleSaveFilter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!filterForm.title.trim()) return alert('Please enter filter title');
+
+    try {
+      const payload = {
+        title: filterForm.title.trim(),
+        subtitle: filterForm.subtitle.trim(),
+        tag: filterForm.tag.trim().toUpperCase(),
+        category: filterForm.category.trim(),
+        route: filterForm.route.trim(),
+        keywords: filterForm.keywords.split(',').map((k) => k.trim()).filter(Boolean),
+        filterType: filterForm.filterType.trim().toUpperCase(),
+        icon: filterForm.icon.trim(),
+        order: Number(filterForm.order) || 0,
+      };
+
+      if (editingFilter) {
+        await authFetch(`/api/v1/sections/filters/${editingFilter.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await authFetch('/api/v1/sections/filters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      setIsFilterModalOpen(false);
+      setEditingFilter(null);
+      loadData();
+    } catch (err: any) {
+      alert('Error saving filter: ' + err.message);
+    }
+  };
+
+  // Delete Advance Filter
+  const handleDeleteFilter = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this advance filter?')) return;
+    try {
+      await authFetch(`/api/v1/sections/filters/${id}`, { method: 'DELETE' });
+      loadData();
+    } catch (err: any) {
+      alert('Error deleting filter: ' + err.message);
+    }
+  };
 
   // Save Section (Only Name asked)
   const handleSaveSection = async (e: React.FormEvent) => {
@@ -287,10 +367,7 @@ export default function AdminSectionsPage() {
     if (!itemForm.title.trim()) return alert('Please enter item title');
 
     try {
-      const isTicket = itemForm.itemType === 'TICKET';
-      const datesArr = isTicket
-        ? itemForm.availableDates.split(',').map(d => d.trim()).filter(Boolean)
-        : [];
+      const datesArr = itemForm.availableDates.split(',').map(d => d.trim()).filter(Boolean);
       const timesArr = itemForm.availableTimes.split(',').map(t => t.trim()).filter(Boolean);
       const featArr = itemForm.features.split(',').map(f => f.trim()).filter(Boolean);
 
@@ -590,7 +667,7 @@ export default function AdminSectionsPage() {
                                           price: item.price,
                                           priceUnit: item.priceUnit,
                                           features: (item.features || []).join(', '),
-                                          availableDates: item.itemType === 'TICKET' ? (item.availableDates || []).join(', ') : '',
+                                          availableDates: (item.availableDates || []).join(', '),
                                           availableTimes: (item.availableTimes || []).join(', '),
                                           totalSlots: item.totalSlots || 100,
                                           image: item.image,
@@ -813,6 +890,139 @@ export default function AdminSectionsPage() {
           </>
         )}
       </div>
+
+      
+            {/* ADVANCE FILTERS & THEMES TAB */}
+            {activeTab === 'filters' && (
+              <div className="space-y-6">
+                <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+                    <div>
+                      <h2 className="text-base font-bold text-white flex items-center gap-2">
+                        <ListFilter className="w-5 h-5 text-purple-400" />
+                        Advance Filters & Exploration Themes CMS
+                      </h2>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        These filters appear dynamically in the mobile app sidebar drawer and explore filter sheet. Connected directly to mobile routes.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingFilter(null);
+                        setFilterForm({
+                          title: '',
+                          subtitle: '',
+                          tag: 'WEDDING',
+                          category: 'Weddings',
+                          route: '/(tabs)/explore?category=Weddings',
+                          keywords: 'wedding, mandap, decor, banquet, palace',
+                          filterType: 'THEME',
+                          icon: 'Sparkles',
+                          order: advanceFilters.length,
+                        });
+                        setIsFilterModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-purple-600/20 cursor-pointer self-start"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Create New Filter
+                    </button>
+                  </div>
+
+                  {advanceFilters.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-500">
+                      <ListFilter className="w-10 h-10 mx-auto mb-2 text-zinc-600" />
+                      <p className="text-sm font-semibold">No custom filters configured yet.</p>
+                      <p className="text-xs text-zinc-600 mt-1">Default celebration presets are currently serving the mobile app.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {advanceFilters.map((f) => (
+                        <div
+                          key={f.id}
+                          className="bg-black/40 border border-zinc-800 rounded-2xl p-4.5 flex flex-col justify-between hover:border-zinc-700 transition relative group"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 font-mono">
+                                {f.tag || 'THEME'}
+                              </span>
+                              <span className="text-[10px] text-zinc-500 font-mono">
+                                #{f.filterType || 'THEME'}
+                              </span>
+                            </div>
+
+                            <h3 className="text-sm font-bold text-white mb-1 group-hover:text-purple-300 transition">
+                              {f.title}
+                            </h3>
+                            {f.subtitle && (
+                              <p className="text-xs text-zinc-400 line-clamp-2 mb-3">
+                                {f.subtitle}
+                              </p>
+                            )}
+
+                            <div className="bg-zinc-900/80 rounded-xl p-2.5 space-y-1.5 text-[11px] mb-3">
+                              <div className="flex items-center justify-between text-zinc-400">
+                                <span>Category Filter:</span>
+                                <span className="font-semibold text-zinc-200">{f.category || f.title}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-zinc-400">
+                                <span>Target Route:</span>
+                                <span className="font-mono text-purple-300 text-[10px] truncate max-w-[180px]">{f.route || '/(tabs)/explore'}</span>
+                              </div>
+                              {Array.isArray(f.keywords) && f.keywords.length > 0 && (
+                                <div className="pt-1 border-t border-zinc-800/60 flex flex-wrap gap-1">
+                                  {f.keywords.slice(0, 4).map((kw, i) => (
+                                    <span key={i} className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                                      {kw}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                            <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                              <CheckCircle className="w-3.5 h-3.5" /> Active in App
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingFilter(f);
+                                  setFilterForm({
+                                    title: f.title,
+                                    subtitle: f.subtitle || '',
+                                    tag: f.tag || 'FEATURED',
+                                    category: f.category || f.title,
+                                    route: f.route || `/(tabs)/explore?category=${encodeURIComponent(f.title)}`,
+                                    keywords: Array.isArray(f.keywords) ? f.keywords.join(', ') : '',
+                                    filterType: f.filterType || 'THEME',
+                                    icon: f.icon || 'Sparkles',
+                                    order: f.order || 0,
+                                  });
+                                  setIsFilterModalOpen(true);
+                                }}
+                                className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+                                title="Edit Filter"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteFilter(f.id)}
+                                className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-zinc-800 transition cursor-pointer"
+                                title="Delete Filter"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
       {/* SECTION MODAL (Only name asked) */}
       <AnimatePresence>
@@ -1205,50 +1415,30 @@ export default function AdminSectionsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {itemForm.itemType === 'TICKET' ? (
-                        <div>
-                          <label className="block text-xs font-semibold text-rose-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <Ticket className="w-3.5 h-3.5" />
-                            <span>Ticket Available Dates (Comma separated) *</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={itemForm.availableDates}
-                            onChange={(e) => setItemForm({ ...itemForm, availableDates: e.target.value })}
-                            placeholder="e.g. 2026-11-10, 2026-11-11, 2026-11-12"
-                            className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
-                          />
-                          <p className="text-[11px] text-zinc-500 mt-1">
-                            Only tickets have fixed admission dates for event passes.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3 text-xs flex flex-col justify-center">
-                          <div className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
-                            <CheckCircle className="w-4 h-4 text-emerald-400" />
-                            <span>All Dates Available (Open Booking)</span>
-                          </div>
-                          <p className="text-zinc-400 text-[11px] leading-relaxed">
-                            For celebration bookings (banquet halls, catering, decor, services), all dates are open. Customers can select any celebration date on the calendar.
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                          Available Dates (Comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={itemForm.availableDates}
+                          onChange={(e) => setItemForm({ ...itemForm, availableDates: e.target.value })}
+                          placeholder="2026-10-24, 2026-10-25"
+                          className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
+                        />
+                      </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Available Times / Slots</span>
+                        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                          Available Times (Comma separated)
                         </label>
                         <input
                           type="text"
                           value={itemForm.availableTimes}
                           onChange={(e) => setItemForm({ ...itemForm, availableTimes: e.target.value })}
-                          placeholder="10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM, Full Day"
+                          placeholder="10:00 AM - 02:00 PM, 06:30 PM - 11:30 PM"
                           className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none font-mono text-xs"
                         />
-                        <p className="text-[11px] text-zinc-500 mt-1">
-                          {itemForm.itemType === 'TICKET' ? 'Time slots for pass entry.' : 'Convenient timing slots (all times are available for booking).'}
-                        </p>
                       </div>
                     </div>
 
@@ -1274,6 +1464,178 @@ export default function AdminSectionsPage() {
           </div>
         )}
       </AnimatePresence>
+    {/* ADVANCE FILTER / THEME MODAL */}
+      <AnimatePresence>
+        {isFilterModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-800 mb-5">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <ListFilter className="w-5 h-5 text-purple-400" />
+                  {editingFilter ? 'Edit Advance Filter / Theme' : 'Create Advance Filter / Theme'}
+                </h3>
+                <button
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Quick Preset Selector */}
+              {!editingFilter && (
+                <div className="mb-4 bg-purple-950/20 border border-purple-500/25 rounded-xl p-3">
+                  <p className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-2">
+                    Quick Pick Celebration Preset:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Wedding Themes', cat: 'Weddings', tag: 'WEDDING', sub: 'Royal palaces, varmala stages & destination packages', kw: 'wedding, mandap, decor, banquet, palace' },
+                      { label: 'Wedding Offers', cat: 'Wedding Offers', tag: 'OFFERS', sub: 'Instant cashback, early bird & VIP promo discounts', kw: 'offer, discount, promo, cashback, deal' },
+                      { label: 'Birthday Themes', cat: 'Birthdays', tag: 'BIRTHDAY', sub: 'Neon backdrops, DJ parties, magicians & cake setups', kw: 'birthday, cake, balloon, dj, party, fiesta' },
+                      { label: 'Catering & Feasts', cat: 'Catering', tag: 'CATERING', sub: 'Pure Desi Ghee banquets, live chaat & mocktails', kw: 'catering, food, buffet, live chaat, pure ghee' },
+                      { label: 'Baby Shower', cat: 'Baby Shower', tag: 'BABY', sub: 'Pastel balloon arches, high tea & cradle setups', kw: 'baby, shower, cradle, balloon, mom-to-be' },
+                      { label: 'Engagements', cat: 'Engagements', tag: 'ROKA', sub: 'Ring ceremony stages, acoustic music & fairy lights', kw: 'engagement, roka, ring ceremony, sangeet' },
+                      { label: 'Corporate Events', cat: 'Corporate', tag: 'CORP', sub: 'Annual summits, award galas & corporate banquets', kw: 'corporate, summit, conference, meeting, seminar' },
+                      { label: 'LokSafari Escapes', cat: 'LokSafari', tag: 'SAFARI', sub: 'Private pool villas, luxury tents & farmstays', kw: 'safari, resort, swimming pool, villa, farmstay' },
+                    ].map((pre) => (
+                      <button
+                        key={pre.label}
+                        type="button"
+                        onClick={() => {
+                          setFilterForm({
+                            title: pre.label,
+                            subtitle: pre.sub,
+                            tag: pre.tag,
+                            category: pre.cat,
+                            route: `/(tabs)/explore?category=${encodeURIComponent(pre.cat)}`,
+                            keywords: pre.kw,
+                            filterType: 'THEME',
+                            icon: 'Sparkles',
+                            order: advanceFilters.length,
+                          });
+                        }}
+                        className="text-[11px] bg-purple-900/40 hover:bg-purple-800/60 text-purple-200 border border-purple-500/30 px-2.5 py-1 rounded-lg transition cursor-pointer font-medium"
+                      >
+                        + {pre.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveFilter} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Filter Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={filterForm.title}
+                    onChange={(e) => setFilterForm({ ...filterForm, title: e.target.value })}
+                    placeholder="e.g. Wedding Themes & Mandaps, LokSafari & Resorts"
+                    required
+                    className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Subtitle / Description
+                  </label>
+                  <input
+                    type="text"
+                    value={filterForm.subtitle}
+                    onChange={(e) => setFilterForm({ ...filterForm, subtitle: e.target.value })}
+                    placeholder="Short description displayed in sidebar"
+                    className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Category Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={filterForm.tag}
+                      onChange={(e) => setFilterForm({ ...filterForm, tag: e.target.value })}
+                      placeholder="e.g. WEDDING, BIRTHDAY"
+                      className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-purple-500 focus:outline-none uppercase font-mono text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Matched Category
+                    </label>
+                    <input
+                      type="text"
+                      value={filterForm.category}
+                      onChange={(e) => setFilterForm({ ...filterForm, category: e.target.value })}
+                      placeholder="e.g. Weddings, Catering"
+                      className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-purple-500 focus:outline-none text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Target Mobile Route
+                  </label>
+                  <input
+                    type="text"
+                    value={filterForm.route}
+                    onChange={(e) => setFilterForm({ ...filterForm, route: e.target.value })}
+                    placeholder="/(tabs)/explore?category=Weddings"
+                    className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-purple-300 font-mono text-xs focus:border-purple-500 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    When the customer clicks this filter in the mobile app, it instantly opens this screen.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Search Keywords (Comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={filterForm.keywords}
+                    onChange={(e) => setFilterForm({ ...filterForm, keywords: e.target.value })}
+                    placeholder="wedding, mandap, varmala, palace, decor"
+                    className="w-full bg-black/60 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:bg-zinc-800 text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 cursor-pointer"
+                  >
+                    {editingFilter ? 'Update Advance Filter' : 'Publish Advance Filter'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+
+
     </div>
   );
 }
