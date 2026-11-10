@@ -29,11 +29,14 @@ export default function ExplorePage() {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const [listingsRes, eventsRes]: [any, any] = await Promise.all([
+        const [listingsRes, eventsRes, sectionsRes]: [any, any, any] = await Promise.all([
           apiClient.get('/listings').catch(() => ({ data: [] })),
-          apiClient.get('/events').catch(() => ({ data: [] }))
+          apiClient.get('/events').catch(() => ({ data: [] })),
+          apiClient.get('/sections').catch(() => ({ data: [] }))
         ]);
-        setListings(listingsRes.data || []);
+        const secItems = (sectionsRes.data || []).flatMap((s: any) => (s.items || []).map((it: any) => ({ id: it.id, title: it.title, category: it.type || it.itemType || s.title || 'Celebration', city: it.location || 'All India', price: it.price || 0, rating: it.rating || 4.9, image: it.image, badge: it.cornerTag || it.tag || it.badge, itemType: it.itemType })));
+        const combined = [...(listingsRes.data || []), ...secItems];
+        setListings(combined);
         setEvents(eventsRes.data || []);
       } catch (err) {
         setListings([]);
