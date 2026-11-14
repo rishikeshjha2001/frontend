@@ -19,6 +19,8 @@ import {
   Info,
   Phone,
   MessageCircle,
+  Utensils,
+  Gift,
 } from 'lucide-react';
 
 interface ItemDetail {
@@ -27,10 +29,14 @@ interface ItemDetail {
   subtitle?: string;
   cornerTag?: string;
   tag?: string;
+  category?: string;
   location?: string;
   itemType: 'TICKET' | 'BOOKING';
   price: number;
   priceUnit: string;
+  pricePerPlate?: number;
+  baseHallPrice?: number;
+  pricePerGuest?: number;
   availableDates: string[];
   availableTimes: string[];
   features: string[];
@@ -62,6 +68,10 @@ export default function ItemDetailPage() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
+  const [guestCount, setGuestCount] = useState<number>(150);
+  const [platesCount, setPlatesCount] = useState<number>(100);
+  const [bookingDays, setBookingDays] = useState<number>(1);
+  const [customPlatesEnabled, setCustomPlatesEnabled] = useState<boolean>(false);
   const [isLiked, setIsLiked] = useState<boolean>(false);
 
   // Booking Modal
@@ -182,11 +192,18 @@ export default function ItemDetailPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   bookingDate: selectedDate,
-                  quantity,
+                  quantity: isTicket ? quantity : 1,
+                  guestCount: guestCount || 1,
+                  platesCount: hasPerPlate ? platesCount : 0,
+                  bookingDays: bookingDays || 1,
+                  customSubtotal: grandTotal,
+                  pricePerPlate: plateRate,
                   userName: userName.trim(),
                   userPhone: userPhone.trim(),
                   userEmail: userEmail.trim() || undefined,
-                  notes: `${item?.itemType} via Web Portal (${selectedTime || 'Standard Time'})`,
+                  notes: isTicket
+                    ? `Digital Ticket Pass via Web Portal`
+                    : `Celebration Booking (${bookingDays} Day(s)${hasPerPlate ? ` • ${platesCount} Plates` : ` • ${guestCount} Guests`}) via Web Portal`,
                   paymentId: response.razorpay_payment_id,
                   paymentStatus: 'PAID',
                   totalAmount: grandTotal,
@@ -241,11 +258,18 @@ export default function ItemDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingDate: selectedDate,
-          quantity,
+          quantity: isTicket ? quantity : 1,
+          guestCount: guestCount || 1,
+          platesCount: hasPerPlate ? platesCount : 0,
+          bookingDays: bookingDays || 1,
+          customSubtotal: 0,
+          pricePerPlate: plateRate,
           userName: userName.trim(),
           userPhone: userPhone.trim(),
           userEmail: userEmail.trim() || undefined,
-          notes: `${item?.itemType} via Web Portal (${selectedTime || 'Standard Time'})`,
+          notes: isTicket
+            ? `Digital Ticket Pass via Web Portal`
+            : `Celebration Booking (${bookingDays} Day(s)${hasPerPlate ? ` • ${platesCount} Plates` : ` • ${guestCount} Guests`}) via Web Portal`,
         }),
       });
 
@@ -292,10 +316,39 @@ export default function ItemDetailPage() {
   }
 
   const isTicket = item.itemType === 'TICKET';
-  const subtotal = item.price * quantity;
-  const taxes = Math.round(subtotal * 0.05); // 5% GST
-  const discount = Math.min(100, Math.round(subtotal * 0.1));
-  const grandTotal = Math.max(0, subtotal + taxes - discount);
+
+  const isPerPerson = (item.priceUnit && (item.priceUnit.toLowerCase().includes('plate') || item.priceUnit.toLowerCase().includes('person'))) ||
+    (item.category && (item.category.toLowerCase().includes('cater') || item.category.toLowerCase().includes('buffet')));
+
+  const hasDefaultPerPlate = Boolean(item.pricePerPlate && Number(item.pricePerPlate) > 0) || Boolean(isPerPerson);
+  const hasPerPlate = hasDefaultPerPlate || customPlatesEnabled;
+  const hasPerGuest = Boolean(item.pricePerGuest && Number(item.pricePerGuest) > 0);
+  const hasBaseHall = Boolean(item.baseHallPrice && Number(item.baseHallPrice) > 0);
+
+  const plateRate = item.pricePerPlate ? Number(item.pricePerPlate) : (isPerPerson ? item.price : 550);
+  const guestRate = item.pricePerGuest ? Number(item.pricePerGuest) : 0;
+  const hallRate = item.baseHallPrice ? Number(item.baseHallPrice) : (!hasDefaultPerPlate && !hasPerGuest && !isPerPerson ? item.price : 0);
+
+  // Subtotal calculation
+  const hallSubtotal = hallRate * bookingDays;
+  const platesSubtotal = hasPerPlate ? plateRate * platesCount : 0;
+  const guestSubtotal = hasPerGuest ? guestRate * guestCount : 0;
+
+  const calculatedBase = isTicket
+    ? item.price * quantity
+    : (hasPerPlate || hasPerGuest || hasBaseHall
+        ? hallSubtotal + platesSubtotal + guestSubtotal
+        : (isPerPerson
+            ? item.price * guestCount * bookingDays
+            : item.price * bookingDays));
+
+  // Razorpay 2% Commission + 18% GST on that 2% Commission
+  const razorpayCommission = Math.round(calculatedBase * 0.02 * 100) / 100;
+  const razorpayGst = Math.round(razorpayCommission * 0.18 * 100) / 100;
+  const razorpayTotalFee = Math.round((razorpayCommission + razorpayGst) * 100) / 100;
+
+  // Final Net Payable
+  const grandTotal = Math.round((calculatedBase + razorpayTotalFee) * 100) / 100;
 
   const capacityNum = item.capacity || item.totalSlots || 100;
   const remainingSlots = Math.max(0, capacityNum - item.bookedSlots);
@@ -638,47 +691,195 @@ export default function ItemDetailPage() {
                 </div>
               </div>
 
-              {/* 3. Quantity / Tickets counter */}
-              <div>
-                <label className="text-xs font-bold text-slate-300 block mb-2">
-                  {isTicket ? 'Number of Tickets / Passes' : 'Number of Slots / Packages'}
-                </label>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                  <span className="text-xs text-slate-300 font-medium">Quantity</span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
-                    >
-                      -
-                    </button>
-                    <span className="text-sm font-bold text-white font-mono w-6 text-center">{quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-                      className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
-                    >
-                      +
-                    </button>
+              {/* 3. Ticket Quantity OR Celebration Duration & Plates */}
+              {isTicket ? (
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-2">
+                    Number of Digital Passes
+                  </label>
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-xs text-slate-300 font-medium">Passes</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="text-sm font-bold text-white font-mono w-6 text-center">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.min(20, q + 1))}
+                        className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Event Duration (Days) */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-2">
+                      Event Duration (Days)
+                    </label>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                      <span className="text-xs text-slate-300 font-medium">Days</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setBookingDays((d) => Math.max(1, d - 1))}
+                          className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                        >
+                          -
+                        </button>
+                        <span className="text-sm font-bold text-white font-mono w-8 text-center">{bookingDays}</span>
+                        <button
+                          type="button"
+                          onClick={() => setBookingDays((d) => Math.min(30, d + 1))}
+                          className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Pricing Breakdown Summary */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1.5 text-xs text-slate-300">
-                <div className="flex justify-between">
-                  <span>Subtotal ({quantity} × ₹{item.price})</span>
-                  <span className="font-mono text-white">₹{subtotal.toLocaleString('en-IN')}</span>
+                  {/* Expected Guests */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center justify-between">
+                      <span>Expected Guests</span>
+                      <span className="text-[11px] text-slate-400 font-mono">Max {capacityNum}</span>
+                    </label>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                      <span className="text-xs text-slate-300 font-medium">Guest Attendance</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setGuestCount((g) => Math.max(10, g - 25))}
+                          className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10000}
+                          value={guestCount}
+                          onChange={(e) => setGuestCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                          className="w-16 text-center bg-black/40 border border-white/10 rounded-lg py-1 text-sm font-mono font-bold text-white focus:outline-none focus:border-rose-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setGuestCount((g) => g + 25)}
+                          className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Custom Plates Addition */}
+                  <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                    <div
+                      onClick={() => setCustomPlatesEnabled(!customPlatesEnabled)}
+                      className="flex items-center justify-between cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Utensils className="w-4 h-4 text-rose-400" />
+                        <div>
+                          <div className="text-xs font-bold text-white">Include Catering / Food Plates</div>
+                          <div className="text-[11px] text-slate-400">Rate: ₹{plateRate}/plate (veg & non-veg options)</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={hasPerPlate}
+                        onChange={() => setCustomPlatesEnabled(!customPlatesEnabled)}
+                        className="w-4 h-4 accent-rose-600 rounded cursor-pointer"
+                      />
+                    </div>
+
+                    {hasPerPlate && (
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-xs text-slate-300 font-medium">Plates Count:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPlatesCount((p) => Math.max(10, p - 25))}
+                            className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10000}
+                            value={platesCount}
+                            onChange={(e) => setPlatesCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            className="w-16 text-center bg-black/40 border border-white/10 rounded-lg py-1 text-sm font-mono font-bold text-white focus:outline-none focus:border-rose-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPlatesCount((p) => p + 25)}
+                            className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Transparent Price Breakdown Summary */}
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-xs text-slate-300">
+                <div className="flex items-center gap-1.5 font-bold text-white pb-1 border-b border-white/5">
+                  <Gift className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Transparent Price Breakdown</span>
+                </div>
+
+                {hasBaseHall && (
+                  <div className="flex justify-between">
+                    <span>Venue / Hall Base ({bookingDays} Day{bookingDays > 1 ? 's' : ''})</span>
+                    <span className="font-mono text-white">₹{hallSubtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                {hasPerPlate && (
+                  <div className="flex justify-between">
+                    <span>Catering Plates ({platesCount} × ₹{plateRate})</span>
+                    <span className="font-mono text-white">₹{platesSubtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                {hasPerGuest && (
+                  <div className="flex justify-between">
+                    <span>Guest Attendance ({guestCount} × ₹{guestRate})</span>
+                    <span className="font-mono text-white">₹{guestSubtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                {!hasBaseHall && !hasPerPlate && !hasPerGuest && (
+                  <div className="flex justify-between">
+                    <span>Package Base Rate</span>
+                    <span className="font-mono text-white">₹{calculatedBase.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-[11px] text-slate-400">
+                  <span>Razorpay Payment Gateway Fee (2%)</span>
+                  <span className="font-mono">₹{razorpayCommission.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-400">
-                  <span>Platform GST & Insurance (5%)</span>
-                  <span className="font-mono">₹{taxes}</span>
+                  <span>GST on Gateway Fee (18% on 2%)</span>
+                  <span className="font-mono">₹{razorpayGst.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] text-emerald-400">
-                  <span>Loyalty Discount</span>
-                  <span className="font-mono">-₹{discount}</span>
-                </div>
+
                 <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-sm">
                   <span>Total Payable</span>
                   <span className="text-emerald-400 font-mono text-base">₹{grandTotal.toLocaleString('en-IN')}</span>
@@ -745,9 +946,9 @@ export default function ItemDetailPage() {
                 <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
                   <div className="font-bold text-white text-xs">{item.title}</div>
                   <div className="text-[11px] text-slate-400 mt-0.5">
-                    {selectedDate} {selectedTime ? `• ${selectedTime}` : ''} • Qty: {quantity}
+                    {selectedDate} {selectedTime ? `• ${selectedTime}` : ''} • {isTicket ? `Passes: ${quantity}` : `${bookingDays} Day(s)${hasPerPlate ? ` • ${platesCount} Plates` : ` • ${guestCount} Guests`}`}
                   </div>
-                  <div className="text-emerald-400 font-bold text-xs mt-1">Total: ₹{grandTotal.toLocaleString('en-IN')}</div>
+                  <div className="text-emerald-400 font-bold text-xs mt-1">Total: ₹{grandTotal.toLocaleString('en-IN')} (Incl. 2% Gateway + 18% GST)</div>
                 </div>
 
                 <div>
