@@ -44,6 +44,7 @@ export function Navbar() {
     },
     planning: {
       links: [
+        { name: "AI Event & Wedding Planner", href: "/event-planner" },
         { name: "Wedding Planners", href: "/search?q=planner" },
         { name: "Decorators & Florists", href: "/search?q=decorator" },
         { name: "Pandit & Puja Setup", href: "/search?q=pandit" },
@@ -193,6 +194,14 @@ export function Navbar() {
             <Link href="/about" className="text-slate-700 hover:text-rose-600 font-bold transition-all hover:-translate-y-0.5">
               About Us
             </Link>
+
+            <Link
+              href="/event-planner"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-pink-500 text-white font-extrabold text-xs shadow-sm hover:shadow-md hover:scale-105 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>AI Planner</span>
+            </Link>
           </div>
 
           {/* Right side Auth / Profile */}
@@ -255,6 +264,10 @@ export function Navbar() {
           >
             <div className="px-4 pt-4 pb-6 space-y-3">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 rounded-lg">Home</Link>
+              <Link href="/event-planner" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-base font-extrabold text-rose-600 bg-rose-50/70 hover:bg-rose-100 rounded-lg">
+                <span>AI Event & Budget Planner</span>
+                <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-rose-600 text-white rounded-full">New</span>
+              </Link>
               <Link href="/banquet-halls" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 rounded-lg">Banquet Halls</Link>
               <Link href="/wedding-venues" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 rounded-lg">Wedding Venues</Link>
               <Link href="/dandiya" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 rounded-lg">Dandiya Night Passes</Link>

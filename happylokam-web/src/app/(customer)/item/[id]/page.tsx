@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
   Clock,
@@ -63,6 +63,7 @@ interface ItemDetail {
 export default function ItemDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
 
   const [item, setItem] = useState<ItemDetail | null>(null);
@@ -98,10 +99,18 @@ export default function ItemDetailPage() {
         const data = await res.json();
         if (data.success && data.data) {
           setItem(data.data);
-          if (data.data.minGuests) {
+          const qGuests = searchParams?.get('guests');
+          if (qGuests && parseInt(qGuests, 10) > 0) {
+            setGuestCount(parseInt(qGuests, 10));
+          } else if (data.data.minGuests) {
             setGuestCount(Math.max(Number(data.data.minGuests), 10));
           } else if (data.data.capacity) {
             setGuestCount(Math.min(data.data.capacity, 200));
+          }
+          const qPlates = searchParams?.get('plates');
+          if (qPlates && parseInt(qPlates, 10) > 0) {
+            setPlatesCount(parseInt(qPlates, 10));
+            setCustomPlatesEnabled(true);
           }
           const isTicketItem = data.data.itemType === 'TICKET';
           if (isTicketItem && data.data.availableDates?.length > 0) {
