@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { LogOut, Save, User, Loader2, Calendar } from 'lucide-react';
+import { LogOut, Save, User, Loader2, Calendar, Lock, CheckCircle2 } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 
 export default function ProfilePage() {
@@ -11,7 +11,44 @@ export default function ProfilePage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const router = useRouter();
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirmation do not match.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await authFetch('/api/v1/users/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to change password');
+      }
+      toast.success(data.message || 'Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to update password. Please check your credentials.');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -124,6 +161,54 @@ export default function ProfilePage() {
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Save Changes
               </button>
             </div>
+          </div>
+
+          {/* Security & Password Card */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold mb-6 flex items-center">
+              <Lock className="w-5 h-5 mr-2 text-rose-600" /> Security & Password
+            </h2>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Current Password</label>
+                <input
+                  type="password"
+                  placeholder="Optional if OTP or Google Login"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm ring-1 ring-inset ring-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm ring-1 ring-inset ring-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="Repeat new password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-rose-500 focus:ring-rose-500 sm:text-sm ring-1 ring-inset ring-gray-300"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 mt-4 transition-colors"
+              >
+                {passwordLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2 text-rose-400" />} Update Password
+              </button>
+            </form>
           </div>
         </div>
 

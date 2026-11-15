@@ -163,16 +163,6 @@ export default function PremiumRegisterPage() {
       
       // Handle Razorpay ₹99 Sub Checkout
       if (data.subscription_id) {
-        if (data.subscription_id.startsWith('mock_')) {
-          // Simulate Razorpay success if no keys provided in backend
-          toast.info("Simulating Razorpay Payment (No valid keys found)");
-          setTimeout(() => {
-            toast.success('Autopay Mandate setup successfully! (Simulated)');
-            window.location.href = '/partner';
-          }, 2000);
-          return;
-        }
-
         if ((window as any).Razorpay) {
           const options = {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YourKey',

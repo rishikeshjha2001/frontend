@@ -189,45 +189,103 @@ export default async function GeoCategorySeoPage({ params }: PageProps) {
           <h2 className="text-3xl font-bold text-white">Top Picks for {category} in {city}</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {/* SEO Optimized Dummy Cards to hold space until backend hooks up */}
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Link key={i} href="/search" className="group flex flex-col bg-zinc-900/40 border border-zinc-800/50 rounded-3xl overflow-hidden hover:bg-zinc-800/50 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-500/10">
-              <div className="aspect-[4/3] bg-zinc-800 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent z-10 opacity-60"></div>
-                {/* Fallback pattern */}
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-zinc-900 to-zinc-950" style={{ backgroundSize: '4px 4px' }}></div>
-                <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-bold rounded-full border border-white/10 uppercase tracking-wider">
-                  {isEvent ? 'Trending Event' : 'Premium Venue'}
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link
+            href={`/event-planner?city=${encodeURIComponent(city)}`}
+            className="group flex flex-col bg-zinc-900/60 border border-rose-500/30 rounded-3xl overflow-hidden hover:bg-zinc-800/80 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-500/20"
+          >
+            <div className="aspect-[4/3] bg-zinc-800 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80"
+                alt={`${category} in ${city}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+              <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-rose-600 text-white text-xs font-black rounded-full uppercase tracking-wider">
+                AI Planner Match
               </div>
-              <div className="p-5 flex flex-col flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-rose-400 text-xs font-bold uppercase tracking-wider">{category}</span>
-                  <div className="flex items-center gap-1 text-white bg-zinc-800 px-2 py-1 rounded-lg text-xs font-bold">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    4.9
-                  </div>
-                </div>
-                <h3 className="text-lg font-bold text-white leading-tight mb-2 group-hover:text-rose-300 transition-colors">
-                  The Grand {category} {city}
-                </h3>
-                <div className="flex items-center gap-1.5 text-zinc-400 text-sm mb-4">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate">Prime Location, {city}</span>
-                </div>
-                <div className="mt-auto pt-4 border-t border-zinc-800/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-zinc-500">Starting from</span>
-                    <div className="text-white font-bold">₹{isEvent ? '499' : '15,000'}</div>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-rose-600/20 flex items-center justify-center group-hover:bg-rose-600 transition-colors">
-                    <ChevronRight className="w-4 h-4 text-rose-500 group-hover:text-white" />
-                  </div>
-                </div>
+            </div>
+            <div className="p-6 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-rose-400 text-xs font-bold uppercase tracking-wider">Curated Blueprint</span>
+                <span className="text-amber-400 text-xs font-bold flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400" /> 5.0</span>
               </div>
-            </Link>
-          ))}
+              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-rose-300 transition-colors">
+                Customized {category} Blueprint
+              </h3>
+              <p className="text-zinc-400 text-xs mb-4 leading-relaxed">
+                Simulate 5-pillar catering, mandap decor, and venue tariff specifically calculated for {city}.
+              </p>
+              <div className="mt-auto pt-4 border-t border-zinc-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-rose-400">Launch AI Engine</span>
+                <ChevronRight className="w-4 h-4 text-rose-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/wedding-venues"
+            className="group flex flex-col bg-zinc-900/60 border border-zinc-800 rounded-3xl overflow-hidden hover:bg-zinc-800/80 transition-all hover:-translate-y-1 hover:shadow-2xl"
+          >
+            <div className="aspect-[4/3] bg-zinc-800 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&auto=format&fit=crop&q=80"
+                alt={`Wedding Lawns in ${city}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+              <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                Verified Venues
+              </div>
+            </div>
+            <div className="p-6 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Verified Partners</span>
+                <span className="text-amber-400 text-xs font-bold flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400" /> 4.9</span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-rose-300 transition-colors">
+                Heritage Palaces & Marriage Lawns
+              </h3>
+              <p className="text-zinc-400 text-xs mb-4 leading-relaxed">
+                Explore certified AC banquet halls and open lawns in {city} with verified guest capacities.
+              </p>
+              <div className="mt-auto pt-4 border-t border-zinc-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-white">Browse Catalog</span>
+                <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          <div
+            className="flex flex-col bg-gradient-to-br from-rose-950/40 to-zinc-900 border border-rose-500/20 rounded-3xl p-6 justify-between space-y-6"
+          >
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Dedicated {city} Concierge</span>
+              </div>
+              <h3 className="text-xl font-bold text-white">Need On-Demand Venue Scouting?</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed">
+                Our local celebration coordinators in {city} negotiate directly with hotel owners and decorators to secure guaranteed dates at zero markup.
+              </p>
+            </div>
+            <div className="space-y-3 pt-4 border-t border-zinc-800">
+              <a
+                href={`https://wa.me/919155655222?text=Hi%20happylokam%20team,%20I%20am%20looking%20for%20venue%20options%20in%20${encodeURIComponent(city)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <span>WhatsApp Dedicated Desk</span>
+              </a>
+              <a
+                href="tel:+919155655222"
+                className="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/20"
+              >
+                <span>Call +91 9155655222</span>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
