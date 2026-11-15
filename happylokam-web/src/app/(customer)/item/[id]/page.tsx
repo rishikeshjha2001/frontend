@@ -37,6 +37,11 @@ interface ItemDetail {
   pricePerPlate?: number;
   baseHallPrice?: number;
   pricePerGuest?: number;
+  minGuests?: number;
+  maxGuests?: number;
+  blackoutDates?: string[];
+  advanceNoticeHours?: number;
+  autoAccept?: boolean;
   availableDates: string[];
   availableTimes: string[];
   features: string[];
@@ -93,13 +98,22 @@ export default function ItemDetailPage() {
         const data = await res.json();
         if (data.success && data.data) {
           setItem(data.data);
+          if (data.data.minGuests) {
+            setGuestCount(Math.max(Number(data.data.minGuests), 10));
+          } else if (data.data.capacity) {
+            setGuestCount(Math.min(data.data.capacity, 200));
+          }
           const isTicketItem = data.data.itemType === 'TICKET';
           if (isTicketItem && data.data.availableDates?.length > 0) {
             setSelectedDate(data.data.availableDates[0]);
           } else {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            setSelectedDate(tomorrow.toISOString().split('T')[0]);
+            let nextValid = new Date();
+            nextValid.setDate(nextValid.getDate() + 1);
+            const blackout = Array.isArray(data.data.blackoutDates) ? data.data.blackoutDates : [];
+            while (blackout.includes(nextValid.toISOString().split('T')[0])) {
+              nextValid.setDate(nextValid.getDate() + 1);
+            }
+            setSelectedDate(nextValid.toISOString().split('T')[0]);
           }
           if (data.data.availableTimes?.length > 0) {
             setSelectedTime(data.data.availableTimes[0]);
@@ -140,6 +154,20 @@ export default function ItemDetailPage() {
     if (!selectedDate) {
       alert('Please choose an available date');
       return;
+    }
+    if (item?.blackoutDates && Array.isArray(item.blackoutDates) && item.blackoutDates.includes(selectedDate)) {
+      alert(`The selected date (${selectedDate}) has been marked as blocked or unavailable for this venue. Please select another date.`);
+      return;
+    }
+    if (!isTicket) {
+      if (guestCount < minGuestsAllowed) {
+        alert(`This venue requires a minimum of ${minGuestsAllowed} guests.`);
+        return;
+      }
+      if (guestCount > maxGuestsAllowed) {
+        alert(`This venue accommodates up to ${maxGuestsAllowed} guests maximum.`);
+        return;
+      }
     }
 
     setBookingLoading(true);
@@ -328,6 +356,9 @@ export default function ItemDetailPage() {
   const plateRate = item.pricePerPlate ? Number(item.pricePerPlate) : (isPerPerson ? item.price : 550);
   const guestRate = item.pricePerGuest ? Number(item.pricePerGuest) : 0;
   const hallRate = item.baseHallPrice ? Number(item.baseHallPrice) : (!hasDefaultPerPlate && !hasPerGuest && !isPerPerson ? item.price : 0);
+
+  const minGuestsAllowed = item.minGuests ? Number(item.minGuests) : 10;
+  const maxGuestsAllowed = item.maxGuests ? Number(item.maxGuests) : (item.capacity || 1000);
 
   // Subtotal calculation
   const hallSubtotal = hallRate * bookingDays;
@@ -629,20 +660,29 @@ export default function ItemDetailPage() {
                   <div className="space-y-3">
                     {/* Quick Upcoming Day Chips */}
                     <div className="flex flex-wrap gap-2">
-                      {quickDates.map((q) => (
-                        <button
-                          key={q.value}
-                          type="button"
-                          onClick={() => setSelectedDate(q.value)}
-                          className={`px-3 py-1.5 rounded-xl text-xs transition border ${
-                            selectedDate === q.value
-                              ? 'bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-600/30 font-bold'
-                              : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 font-medium'
-                          }`}
-                        >
-                          {q.label}
-                        </button>
-                      ))}
+                      {quickDates.map((q) => {
+                        const isBlocked = item.blackoutDates && Array.isArray(item.blackoutDates) && item.blackoutDates.includes(q.value);
+                        return (
+                          <button
+                            key={q.value}
+                            type="button"
+                            disabled={isBlocked}
+                            onClick={() => {
+                              if (!isBlocked) setSelectedDate(q.value);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs transition border ${
+                              isBlocked
+                                ? 'bg-red-950/20 border-red-900/30 text-slate-500 line-through cursor-not-allowed opacity-60'
+                                : selectedDate === q.value
+                                ? 'bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-600/30 font-bold'
+                                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 font-medium'
+                            }`}
+                            title={isBlocked ? 'Date blocked or reserved' : undefined}
+                          >
+                            {q.label}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Custom Calendar Date Input */}
@@ -652,7 +692,14 @@ export default function ItemDetailPage() {
                         type="date"
                         min={todayStr}
                         value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        onChange={(e) => {
+                          const chosen = e.target.value;
+                          if (item.blackoutDates && Array.isArray(item.blackoutDates) && item.blackoutDates.includes(chosen)) {
+                            alert(`The date ${chosen} is blocked or unavailable for this venue. Please pick another celebration date.`);
+                            return;
+                          }
+                          setSelectedDate(chosen);
+                        }}
                         className="bg-black/50 border border-white/15 rounded-lg px-3 py-1.5 text-white text-xs focus:border-rose-500 focus:outline-none [color-scheme:dark]"
                       />
                     </div>
@@ -751,29 +798,32 @@ export default function ItemDetailPage() {
                   <div>
                     <label className="text-xs font-bold text-slate-300 block mb-2 flex items-center justify-between">
                       <span>Expected Guests</span>
-                      <span className="text-[11px] text-slate-400 font-mono">Max {capacityNum}</span>
+                      <span className="text-[11px] text-slate-400 font-mono">Allowed: {minGuestsAllowed} - {maxGuestsAllowed}</span>
                     </label>
                     <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
                       <span className="text-xs text-slate-300 font-medium">Guest Attendance</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setGuestCount((g) => Math.max(10, g - 25))}
+                          onClick={() => setGuestCount((g) => Math.max(minGuestsAllowed, g - 25))}
                           className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
                         >
                           -
                         </button>
                         <input
                           type="number"
-                          min={1}
-                          max={10000}
+                          min={minGuestsAllowed}
+                          max={maxGuestsAllowed}
                           value={guestCount}
-                          onChange={(e) => setGuestCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val)) setGuestCount(Math.min(maxGuestsAllowed, Math.max(minGuestsAllowed, val)));
+                          }}
                           className="w-16 text-center bg-black/40 border border-white/10 rounded-lg py-1 text-sm font-mono font-bold text-white focus:outline-none focus:border-rose-500"
                         />
                         <button
                           type="button"
-                          onClick={() => setGuestCount((g) => g + 25)}
+                          onClick={() => setGuestCount((g) => Math.min(maxGuestsAllowed, g + 25))}
                           className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
                         >
                           +
@@ -918,6 +968,13 @@ export default function ItemDetailPage() {
                 <div className="p-4 rounded-2xl bg-black/40 border border-white/10 font-mono text-center">
                   <div className="text-[10px] text-slate-400 uppercase font-bold">DIGITAL PASS CODE</div>
                   <div className="text-lg font-black text-rose-400 mt-1">{bookingConfirmed.ticketCode}</div>
+                  {bookingConfirmed.checkInOtp && (
+                    <div className="mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+                      <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Venue Check-In OTP</div>
+                      <div className="text-2xl font-black text-emerald-300 tracking-widest mt-0.5">{bookingConfirmed.checkInOtp}</div>
+                      <div className="text-[10px] text-emerald-400/80 font-sans mt-0.5">Share with venue manager on arrival</div>
+                    </div>
+                  )}
                   <div className="text-xs text-slate-300 mt-2 font-sans font-medium">{bookingConfirmed.userName} • {bookingConfirmed.bookingDate}</div>
                 </div>
                 <button
