@@ -17,7 +17,8 @@ import {
   Calendar,
   Download,
   Plus,
-  X
+  X,
+  Edit2
 } from 'lucide-react';
 import { authFetch } from '@/lib/auth-fetch';
 
@@ -77,6 +78,21 @@ export default function AdminPartnersPage() {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [partnerToEdit, setPartnerToEdit] = useState<Partner | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    businessName: '',
+    email: '',
+    phone: '',
+    location: '',
+    categories: '',
+    status: 'ACTIVE',
+    isVerified: true,
+    image: '',
+  });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -251,6 +267,87 @@ export default function AdminPartnersPage() {
     }
   };
 
+  const openEditModal = (partner: Partner) => {
+    setPartnerToEdit(partner);
+    setEditForm({
+      name: partner.name || '',
+      businessName: partner.businessName || '',
+      email: partner.email || '',
+      phone: partner.phone || '',
+      location: partner.location || 'Patna, Bihar',
+      categories: Array.isArray(partner.categories) ? partner.categories.join(', ') : (partner.categories || ''),
+      status: partner.status || (partner.isVerified ? 'ACTIVE' : 'PENDING_VERIFICATION'),
+      isVerified: partner.isVerified ?? false,
+      image: partner.image || partner.imageUrl || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditImageUpload = async (file: File) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        const res = await authFetch('/api/v1/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64 }),
+        });
+        const data = await res.json().catch(() => null);
+        if (data?.url) {
+          setEditForm(prev => ({ ...prev, image: data.url }));
+          toast.success('Partner logo updated');
+        } else {
+          toast.error('Image upload failed');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error('Image upload failed');
+    }
+  };
+
+  const handleUpdatePartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerToEdit) return;
+    if (!editForm.businessName || !editForm.email || !editForm.phone) {
+      toast.error('Business name, email, and phone are required');
+      return;
+    }
+    try {
+      setUpdating(true);
+      const res = await authFetch(`/api/v1/admin/partners/${partnerToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name,
+          businessName: editForm.businessName,
+          email: editForm.email,
+          phone: editForm.phone,
+          location: editForm.location,
+          categories: editForm.categories.split(',').map(c => c.trim()).filter(Boolean),
+          status: editForm.status,
+          isVerified: editForm.isVerified,
+          image: editForm.image,
+          imageUrl: editForm.image,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success !== false) {
+        toast.success('Partner updated successfully');
+        setIsEditModalOpen(false);
+        setPartnerToEdit(null);
+        fetchPartners();
+      } else {
+        toast.error(data.error || 'Failed to update partner');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error updating partner');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const filteredPartners = partners.filter(p => 
     p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
     p.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -403,6 +500,14 @@ export default function AdminPartnersPage() {
                               title="View Details"
                             >
                               <Eye className="w-5 h-5" />
+                            </button>
+
+                            <button
+                              onClick={() => openEditModal(partner)}
+                              className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all tooltip-trigger"
+                              title="Edit Partner"
+                            >
+                              <Edit2 className="w-5 h-5" />
                             </button>
                             
                             {!partner.isVerified && (
@@ -707,6 +812,195 @@ export default function AdminPartnersPage() {
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-sm font-semibold shadow-lg shadow-rose-600/30 transition disabled:opacity-50"
                   >
                     {creating ? 'Creating...' : 'Onboard Partner'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Partner Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && partnerToEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 text-zinc-300 shadow-2xl relative"
+            >
+              <div className="flex justify-between items-center pb-4 border-b border-white/10 mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Edit2 className="w-5 h-5 text-rose-500" />
+                  Edit Partner: {partnerToEdit.businessName}
+                </h3>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdatePartner} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Business / Brand Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.businessName}
+                    onChange={e => setEditForm({ ...editForm, businessName: e.target.value })}
+                    required
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Partner Logo / Brand Photo
+                  </label>
+                  <div className="flex items-center gap-3 bg-black/30 p-3 rounded-xl border border-white/10">
+                    {editForm.image ? (
+                      <img src={editForm.image} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-white/20 shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 shrink-0">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-1.5">
+                      <input
+                        type="text"
+                        value={editForm.image}
+                        onChange={e => setEditForm({ ...editForm, image: e.target.value })}
+                        placeholder="Paste logo URL (https://...)"
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:border-rose-500 focus:outline-none"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => e.target.files?.[0] && handleEditImageUpload(e.target.files[0])}
+                        className="text-xs text-zinc-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Owner / Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                      required
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                      required
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Account Status
+                    </label>
+                    <select
+                      value={editForm.status}
+                      onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    >
+                      <option value="ACTIVE" className="bg-zinc-900 text-white">Active</option>
+                      <option value="PENDING_VERIFICATION" className="bg-zinc-900 text-white">Pending Verification</option>
+                      <option value="SUSPENDED" className="bg-zinc-900 text-white">Suspended</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      City & Location
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.location}
+                      onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+                      placeholder="e.g. Patna, Bihar"
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Categories (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.categories}
+                      onChange={e => setEditForm({ ...editForm, categories: e.target.value })}
+                      placeholder="Wedding, Venue, Catering"
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <label className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editForm.isVerified}
+                      onChange={e => setEditForm({ ...editForm, isVerified: e.target.checked })}
+                      className="w-4 h-4 text-emerald-500 rounded focus:ring-0"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-white block">Partner Verification Status</span>
+                      <span className="text-[11px] text-zinc-500 block">Verified partners can accept live celebration bookings and show verified badges.</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 text-sm font-medium transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-sm font-semibold shadow-lg shadow-rose-600/30 transition disabled:opacity-50"
+                  >
+                    {updating ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
