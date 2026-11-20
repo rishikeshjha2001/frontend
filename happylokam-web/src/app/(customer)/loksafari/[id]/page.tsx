@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Compass, MapPin, Calendar, Users, Camera, ShieldCheck, 
-  ArrowLeft, ArrowRight, Phone, MessageSquare, Star, Sparkles, CheckCircle2,
+  ArrowLeft, ArrowRight, MessageSquare, Star, Sparkles, CheckCircle2,
   Clock, IndianRupee, X, AlertCircle, ChevronDown, Check, Share2
 } from 'lucide-react';
 import Link from 'next/link';
@@ -409,13 +409,7 @@ export default function LokSafariDetailPage() {
                 </a>
               </div>
 
-              {/* Direct Call Assistance */}
-              <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-                <p className="text-xs text-slate-500 font-medium mb-1">Need help or a custom vehicle?</p>
-                <a href="tel:+918969255561" className="text-xs font-black text-emerald-700 hover:underline flex items-center justify-center gap-1">
-                  <Phone className="w-3.5 h-3.5" /> Call: +91 8969255561
-                </a>
-              </div>
+
 
             </div>
           </div>

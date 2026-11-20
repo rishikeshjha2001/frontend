@@ -278,12 +278,6 @@ export default async function GeoCategorySeoPage({ params }: PageProps) {
               >
                 <span>WhatsApp Dedicated Desk</span>
               </a>
-              <a
-                href="tel:+919155655222"
-                className="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/20"
-              >
-                <span>Call +91 9155655222</span>
-              </a>
             </div>
           </div>
         </div>

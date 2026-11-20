@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Compass, MapPin, Calendar, Users, Camera, ShieldCheck, 
-  ArrowRight, Phone, MessageSquare, Star, Sparkles, CheckCircle2,
+  ArrowRight, Headphones, MessageSquare, Star, Sparkles, CheckCircle2,
   Clock, IndianRupee, Heart, Search, Filter
 } from 'lucide-react';
 import Link from 'next/link';
@@ -156,11 +156,11 @@ export default function LokSafariCustomerPage() {
           </div>
           <div className="flex items-center gap-3 p-2">
             <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
-              <Phone className="w-6 h-6" />
+              <Headphones className="w-6 h-6" />
             </div>
             <div>
-              <p className="font-extrabold text-white text-sm">24/7 Helpline</p>
-              <p className="text-xs text-slate-400 font-medium">+91 8969255561 on trip</p>
+              <p className="font-extrabold text-white text-sm">Trip Support</p>
+              <p className="text-xs text-slate-400 font-medium">On-ground assistance</p>
             </div>
           </div>
         </div>
@@ -341,12 +341,7 @@ export default function LokSafariCustomerPage() {
                   Chat on WhatsApp
                 </button>
               </a>
-              <a href="tel:+918969255561" className="w-full">
-                <button className="w-full py-4 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all border border-white/20 flex items-center justify-center gap-2 text-base">
-                  <Phone className="w-5 h-5 text-emerald-400" />
-                  Call: +91 8969255561
-                </button>
-              </a>
+
             </div>
           </div>
         </div>

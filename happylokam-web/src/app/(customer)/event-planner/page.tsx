@@ -20,7 +20,6 @@ import {
   Share2,
   Save,
   Trash2,
-  Phone,
   MessageCircle,
   HelpCircle,
   ArrowRight,
@@ -358,13 +357,6 @@ export default function EventPlannerPage() {
               <MessageCircle className="w-4 h-4" />
               <span>Concierge WhatsApp</span>
             </button>
-            <a
-              href="tel:+919155655222"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all shadow-sm"
-            >
-              <Phone className="w-4 h-4 text-rose-300" />
-              <span>Call +91 9155655222</span>
-            </a>
           </div>
         </div>
       </section>

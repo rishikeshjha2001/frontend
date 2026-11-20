@@ -17,7 +17,6 @@ import {
   Users,
   ChevronRight,
   Info,
-  Phone,
   MessageCircle,
   Utensils,
   Gift,
@@ -601,13 +600,6 @@ export default function ItemDetailPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <a
-                  href="tel:+918969255561"
-                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition"
-                >
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Call Desk</span>
-                </a>
                 <a
                   href="https://wa.me/918969255561"
                   target="_blank"

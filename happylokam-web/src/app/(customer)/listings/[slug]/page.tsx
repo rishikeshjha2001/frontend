@@ -12,7 +12,6 @@ import {
   CalendarDays, 
   IndianRupee, 
   ChevronRight, 
-  Phone,
   ShieldCheck,
   Sparkles,
   Loader2
@@ -244,14 +243,6 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                   <h3 className="text-xl font-bold text-gray-900 mt-1">{listing.partner.businessName || listing.partner.name}</h3>
                   <p className="text-sm text-gray-500 mt-1">happylokam Verified Celebration Host</p>
                 </div>
-                {listing.partner.phone && (
-                  <a 
-                    href={`tel:${listing.partner.phone}`}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl text-sm transition-colors"
-                  >
-                    <Phone className="w-4 h-4 text-rose-600" /> Call Host
-                  </a>
-                )}
               </section>
             )}
 

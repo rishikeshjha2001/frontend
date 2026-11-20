@@ -9,7 +9,6 @@ import {
   Star,
   ShieldCheck,
   Sparkles,
-  Phone,
   Camera,
   Utensils,
   Music,
@@ -182,15 +181,6 @@ export default function WeddingVenuesPage() {
                         >
                           View Details & Reserve
                         </Link>
-                        {venue.partner?.phone && (
-                          <a
-                            href={`tel:${venue.partner.phone}`}
-                            className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-                            title="Call Host"
-                          >
-                            <Phone className="w-4 h-4" />
-                          </a>
-                        )}
                       </div>
                     </div>
                   </div>

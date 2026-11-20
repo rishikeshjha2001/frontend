@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Mail, Phone, MapPin, ShieldCheck, HeartHandshake, Sparkles, Send } from 'lucide-react';
+import { Mail, MapPin, ShieldCheck, HeartHandshake, Sparkles, Send } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -63,12 +63,6 @@ export function Footer() {
               India's premium celebration platform. We make every moment unforgettable without the planning pressure. From weddings to corporate events, find your perfect match.
             </p>
             <div className="space-y-4">
-              <a href="tel:+918969255561" className="flex items-center gap-4 text-slate-300 hover:text-rose-400 transition-colors group">
-                <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
-                  <Phone className="w-4 h-4 text-rose-400" />
-                </div>
-                <span className="font-bold">+91 89692 55561</span>
-              </a>
               <a href="mailto:info@happylokam.com" className="flex items-center gap-4 text-slate-300 hover:text-rose-400 transition-colors group">
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
                   <Mail className="w-4 h-4 text-rose-400" />

@@ -9,7 +9,6 @@ import {
   MapPin,
   Star,
   ShieldCheck,
-  Phone,
   Camera,
   Utensils,
   Loader2,
@@ -143,15 +142,6 @@ export default function EngagementsPage() {
                       >
                         View & Book
                       </Link>
-                      {v.partner?.phone && (
-                        <a
-                          href={`tel:${v.partner.phone}`}
-                          className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-                          title="Call Host"
-                        >
-                          <Phone className="w-4 h-4" />
-                        </a>
-                      )}
                     </div>
                   </div>
                 </div>

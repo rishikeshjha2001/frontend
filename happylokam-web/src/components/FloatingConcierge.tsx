@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Phone, MessageCircle, MessageSquare, X, Headphones, Sparkles } from 'lucide-react';
+import { MessageCircle, MessageSquare, X, Headphones, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -57,19 +57,6 @@ export default function FloatingConcierge() {
               </div>
             </a>
 
-            {/* Direct Call */}
-            <a
-              href="tel:+918969255561"
-              className="flex items-center gap-3 p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 transition-colors group"
-            >
-              <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                <Phone className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-900 group-hover:text-rose-900">Call Us Directly</p>
-                <p className="text-[10px] text-slate-500 truncate">9:00 AM - 10:00 PM IST</p>
-              </div>
-            </a>
 
             {/* Message Support Desk */}
             <Link

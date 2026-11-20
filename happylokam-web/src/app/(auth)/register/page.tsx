@@ -382,7 +382,7 @@ export default function PremiumRegisterPage() {
           
           {/* Left Side - Branding */}
           <div className="hidden lg:flex w-5/12 p-12 lg:p-16 flex-col justify-between relative overflow-hidden bg-gradient-to-br from-rose-600 to-rose-950">
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay"></div>
             <div className="relative z-10">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                 <Link href="/" className="inline-flex items-center gap-2 text-white">

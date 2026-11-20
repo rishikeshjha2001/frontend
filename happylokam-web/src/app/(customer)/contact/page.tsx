@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Clock, MessageSquare, Send, CheckCircle2, Sparkles, Headphones, ShieldCheck, MessageCircle } from 'lucide-react';
+import { Mail, MapPin, Clock, MessageSquare, Send, CheckCircle2, Sparkles, Headphones, ShieldCheck, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContactPage() {
@@ -83,19 +83,6 @@ export default function ContactPage() {
               </h2>
 
               <div className="space-y-4">
-                <a
-                  href="tel:+918969255561"
-                  className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-rose-50/60 border border-slate-100 hover:border-rose-200 transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Call Us Anytime</p>
-                    <p className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors">+91 89692 55561</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Mon - Sun: 9:00 AM - 10:00 PM IST</p>
-                  </div>
-                </a>
 
                 <a
                   href="https://wa.me/918969255561?text=Hello%20happylokam%20Concierge%2C%20I%20need%20assistance%20with%20my%20event%20booking"
