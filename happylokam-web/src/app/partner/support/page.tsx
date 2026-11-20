@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Headphones, Phone, Mail, MessageSquare, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Headphones, MessageCircle, Mail, MessageSquare, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PartnerSupportPage() {
@@ -47,12 +47,12 @@ export default function PartnerSupportPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 space-y-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
-              <Phone className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+              <MessageCircle className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-black text-slate-900 mb-1">Partner Hotline</h3>
-            <p className="text-xs text-slate-500 mb-4">Urgent day-of-event assistance</p>
-            <a href="tel:+918969255561" className="text-rose-600 font-bold text-sm hover:underline">+91 89692 55561</a>
+            <h3 className="text-lg font-black text-slate-900 mb-1">Partner WhatsApp</h3>
+            <p className="text-xs text-slate-500 mb-4">Priority day-of-event chat assistance</p>
+            <a href="https://wa.me/918969255561?text=Hello%20happylokam%20Partner%20Desk%2C%20I%20need%20support" target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-bold text-sm hover:underline">Chat on WhatsApp &rarr;</a>
           </div>
 
           <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center">
